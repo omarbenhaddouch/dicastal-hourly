@@ -1,5 +1,5 @@
 # Hourly Production Monitoring Dashboard
-**CITIC Dicastal Morocco — SW CNC Production Line**
+**CITIC Dicastal — SW CNC Production Line**
 
 Live app: https://dicastal-hourly.netlify.app
 Manager Dashboard: https://dicastal-hourly.netlify.app/dashboard
