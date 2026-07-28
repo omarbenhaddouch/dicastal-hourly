@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="style.css" rel="stylesheet">
+<link href="dashboard.css" rel="stylesheet">
+<link rel="icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqWTRvHB8KIPx0RM1s5mMnM1W_N06CILMBS9O-fe4L8Q&s=10" sizes="any">
+<link rel="apple-touch-icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqWTRvHB8KIPx0RM1s5mMnM1W_N06CILMBS9O-fe4L8Q&s=10">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f2744">
+<title>Hourly Monitoring – CITIC Dicastal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Code+Pro:wght@400;600&family=Lato:wght@300;400;700&family=Orbitron:wght@400;900&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+     /* FIXED / STICKY BUTTON */
+.sticky-db-btn {
+  position: fixed;
+  bottom: 14px;
+  left: 20px;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(15, 39, 68, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  border-radius: 30px;
+  color: #ffffff;
+  font-family: 'Orbitron', 'JetBrains Mono', sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.sticky-db-btn .db-btn-icon {
+  font-size: 1rem;
+  color: #00d4ff;
+  flex-shrink: 0;
+}
+
+/* TEXT ANIMATION WRAPPER */
+.sticky-db-btn .db-text-wrap {
+  display: inline-flex;
+  max-width: 120px; /* Adjust to fit longest label */
+  opacity: 1;
+  white-space: nowrap;
+  transition: max-width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease-in-out;
+}
+
+.sticky-db-btn .db-btn-text {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* PULSE DOT INDICATOR */
+.sticky-db-btn .db-pulse-dot {
+  width: 7px;
+  height: 7px;
+  background-color: #00f2fe;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #00f2fe;
+  flex-shrink: 0;
+  animation: dbPulse 1.8s infinite;
+}
+
+/* COLLAPSED STATE (Applied via JS after 5s) */
+.sticky-db-btn.collapsed .db-text-wrap {
+  max-width: 0;
+  opacity: 0;
+}
+
+/* HOVER EFFECT: Expand text back on hover even if collapsed */
+.sticky-db-btn:hover {
+  background: rgba(15, 52, 96, 0.95);
+  border-color: rgba(0, 212, 255, 0.8);
+  box-shadow: 0 6px 22px rgba(0, 212, 255, 0.35);
+}
+
+.sticky-db-btn:hover .db-text-wrap {
+  max-width: 120px;
+  opacity: 1;
+}
+
+@keyframes dbPulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 242, 254, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 242, 254, 0); }
+}
+
+  </style>
+  
+  
+  
+<!-- Firebase SDK + Liquid Glass button motion (module) -->
+<script type="module" src="firebase-init.js"></script>
+</head>
+<body>
+<!-- PARTICLE CANVAS (dashboard bg) -->
+<canvas id="db-particles"></canvas>
+<!-- TOP BAR -->
+<div class="topbar">
+  <h2 class="topbar-title">CITIC Dicastal</h2>
+  
+  <div class="topbar-meta">
+    <div class="meta-field">
+      <label>Date</label>
+      <input type="date" id="shiftDate">
+    </div>
+    <div class="meta-field">
+      <label>Shift</label>
+      <select id="shiftLetter">
+        <option>A</option><option>B</option><option>C</option><option>D</option>
+      </select>
+    </div>
+    <div class="meta-field hours-h">
+      <label>Hours</label>
+      <select id="numHours" onchange="rebuildHourColumns()">
+        <option value="8" selected>8</option>
+      </select>
+    </div>
+  </div>
+  <!-- Replace your existing topbar-actions div with this -->
+  <div class="liquid-bar-wrap">
+    <div class="liquid-bar">
+      <button class="lg-btn" id="clearBtn" onclick="askClear()" title="Clear">
+        <span class="lg-icon"><i class="fa-solid fa-trash"></i></span>
+        <span class="lg-label">Clear</span>
+      </button>
+      <button class="lg-btn" onclick="takeScreenshot()" title="Screenshot">
+        <span class="lg-icon"><i class="fa-solid fa-print"></i></span>
+        <span class="lg-label">Report</span>
+      </button>
+      <button class="lg-btn" onclick="loadFirebase()" title="Load">
+        <span class="lg-icon"><i class="fa-solid fa-download"></i></span>
+        <span class="lg-label">Load</span>
+      </button>
+      <button class="lg-btn" onclick="toggleLiveSync()" id="liveSyncBtn" title="Toggle real-time sync">
+        <span class="lg-icon"><i class="fa-solid fa-wifi"></i></span>
+        <span class="lg-label">Live</span>
+      </button>
+      <button class="lg-btn lg-btn-save" onclick="saveData()" title="Save">
+        <span class="lg-icon"><i class="fa-solid fa-floppy-disk"></i></span>
+        <span class="lg-label">Save</span>
+      </button>
+      
+    </div>
+  </div>
+</div>
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="showTab('entry', this)"><i class="fa-solid fa-user-clock" style="color: rgb(26, 58, 92);font-size:16px"></i> Data Entry</div>
+  <div class="tab" onclick="showTab('dashboard', this)"><i class="fa-solid fa-chart-pie" style="color: rgb(26, 58, 92);font-size:16px"></i> Dashboard</div>
+</div>
+<!-- MAIN -->
+<div class="main">
+  <!-- ════════ DATA ENTRY TAB ════════ -->
+  <div id="tab-entry">
+<div class="section-header">
+<div class="section-title">SHIFT LOG</div>
+<div style="display:flex;gap:8px;align-items:center;">
+<span style="font-size:0.7rem;color:var(--muted);font-family:var(--font-mono);">Legend:</span>
+<span class="badge badge-ok">≥ On Target</span>
+<span class="badge badge-bad">< Off Target</span>
+</div>
+</div>
+<div class="table-wrap">
+<table id="monitorTable">
+<thead id="tableHead"></thead>
+<tbody id="tableBody"></tbody>
+</table>
+<button class="add-row-btn" onclick="addRow()">+ Add Machine Row</button>
+</div>
+</div>
+  <!-- ════════ DASHBOARD TAB — FUTURISTIC ════════ -->
+  <div id="tab-dashboard" style="display:none">
+    
+<!-- Ticker -->
+<div id="db-ticker">
+  <div id="db-ticker-inner"><!-- JS --></div>
+</div>
+<!-- HUD header -->
+<div id="db-hud-header">
+  <div id="db-hud-title">
+    PRODUCTION MONITORING
+    <div class="db-live-badge">
+      <span class="db-live-dot"></span> LIVE
+    </div>
+  </div>
+  <div id="db-hud-clock">
+    <span class="clock-val" id="db-clock-val">--:--:--</span>
+    &nbsp;|&nbsp; CITIC DICASTAL
+  </div>
+  <button id="db-refresh-btn" onclick="renderDashboard(true)">⟳ REFRESH</button>
+</div>
+<!-- KPI cards -->
+<div id="summaryCards"></div>
+<!-- Mid strip: efficiency ring + machine matrix -->
+<div id="db-mid-strip">
+  <div id="db-eff-panel">
+    <div id="db-eff-panel-label">EFFICIENCY %</div>
+    <svg id="db-eff-svg" width="110" height="110" viewBox="0 0 96 96">
+      <circle class="db-eff-ring-track" id="db-eff-ring-track" cx="48" cy="48" r="40"/>
+      <g id="db-tick-marks"></g>
+      <circle id="db-eff-ring-fill" cx="48" cy="48" r="40"/>
+      <text id="db-eff-ring-text" x="48" y="44" text-anchor="middle" dominant-baseline="central"
+        style="font-size:17px;font-weight:900;font-family:'Orbitron',sans-serif;fill:#00d4ff">0%</text>
+      <text x="48" y="61" text-anchor="middle"
+        style="font-size:6px;font-family:'JetBrains Mono',monospace;fill:#4a7a9b;letter-spacing:2px">OEE</text>
+    </svg>
+    <div id="db-eff-panel-sub">— — —</div>
+  </div>
+  <div id="db-machine-grid-wrap">
+<div id="db-machine-grid-title">MACHINE STATUS</div>
+<div id="db-machine-grid"><!-- JS --></div>
+</div>
+</div>
+<!-- Charts -->
+<div class="db-charts-grid">
+  <div class="db-chart-box">
+    <div class="db-chart-title">ACTUAL vs TARGET — ALL MACHINES</div>
+    <div class="db-chart-container">
+      <div class="db-chart-skeleton" id="skel-bar"></div>
+      <canvas id="barChart"></canvas>
+    </div>
+  </div>
+  <div class="db-chart-box">
+    <div class="db-chart-title">EFFICIENCY % BY MACHINE</div>
+    <div class="db-chart-container">
+      <div class="db-chart-skeleton" id="skel-eff"></div>
+      <canvas id="effChart"></canvas>
+    </div>
+  </div>
+  <div class="db-chart-box">
+    <div class="db-chart-title">CUMULATIVE PRODUCTION TREND</div>
+    <div class="db-chart-container">
+      <div class="db-chart-skeleton" id="skel-line"></div>
+      <canvas id="lineChart"></canvas>
+    </div>
+  </div>
+  <div class="db-chart-box">
+    <div class="db-chart-title">TOP 5 MACHINES BY OUTPUT</div>
+    <div class="db-chart-container">
+      <div class="db-chart-skeleton" id="skel-top"></div>
+      <canvas id="topChart"></canvas>
+    </div>
+  </div>
+</div>
+  </div><!-- /#tab-dashboard -->
+</div><!-- /.main -->
+<div class="toast" id="toast"></div>
+<!-- PASSWORD MODAL -->
+<div class="pwd-overlay" id="pwdOverlay" onclick="closePwdModal()">
+  <div class="pwd-modal" onclick="event.stopPropagation()">
+    <div class="pwd-modal-header">
+      <div class="pwd-lock-icon"><i class="fa-solid fa-lock"></i></div>
+      <div class="pwd-title">Clear Data</div>
+      <div class="pwd-subtitle">Enter password to clear all data</div>
+    </div>
+    <div class="pwd-modal-body">
+      <div class="pwd-input-wrap">
+        <input type="password" id="pwdInput" class="pwd-input" placeholder="Enter password..."
+          onkeydown="if(event.key==='Enter') submitPwd()"
+          oninput="document.getElementById('pwdError').style.display='none'">
+        <button class="pwd-eye" onclick="togglePwdEye()" title="Show/hide"><i class="fa-solid fa-eye-low-vision"></i></button>
+      </div>
+      <div class="pwd-error" id="pwdError"><i class="fa-solid fa-square-xmark"></i> Wrong password. Try again.</div>
+    </div>
+    <div class="pwd-modal-footer">
+      <button class="pwd-btn pwd-btn-cancel" onclick="closePwdModal()">Cancel</button>
+      <button class="pwd-btn pwd-btn-confirm" onclick="submitPwd()"><i class="fa-solid fa-square-check"></i> Confirm</button>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<div class="print-stats-page" id="printStatsPage" style="display:none"></div>
+<datalist id="partsList">
+  <option value="T-opal Front">
+  <option value="T-opal Rear">
+  <option value="VOLVO front LH">
+  <option value="VOLVO front RH">
+  <option value="VOLVO REAR">
+  <option value="GM-H">
+  <option value="GM S">
+  <option value="MEB 31 Front">
+  <option value="MEB 31 Rear">
+  <option value="NISSAN P42">
+  <option value="HONDA">
+  <option value="FORD">
+  <option value="FIAT">
+</datalist>
+<script src="app.js"></script>
+<script src="https://kit.fontawesome.com/e114c7405d.js" crossorigin="anonymous"></script>
+  <script >
+     
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const dbBtn = document.getElementById('dbBtn');
+
+      if (dbBtn) {
+        // 1. Unhide after 4 seconds by setting display to inline-flex
+        setTimeout(() => {
+          dbBtn.style.display = 'inline-flex';
+
+          // 2. Collapse text 5 seconds after it appears
+          setTimeout(() => {
+            dbBtn.classList.add('collapsed');
+          }, 8000);
+
+        }, 5000);
+      }
+    });
+
+
+  </script>
+  
+
+  <!-- TOP BAR DASHBOARD ANCHOR -->
+  <!-- DASHBOARD BUTTON WITH AUTO-COLLAPSE -->
+  <a href="dashboard.html" target="_blank" class="sticky-db-btn" id="dbBtn" title="Dashboard">
+    <span class="db-btn-icon"><i class="fa-solid fa-chart-line"></i></span>
+    <span class="db-text-wrap">
+      <span class="db-btn-text">Dashboard</span>
+    </span>
+    <span class="db-pulse-dot"></span>
+  </a>
+
+  
+
+
+
+</body>
+</html>
