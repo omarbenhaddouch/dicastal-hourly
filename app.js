@@ -8,7 +8,7 @@ const REASON_TAGS = [
   { key: 'Tool Change', slug: 'tool-change', icon: 'fa-solid fa-wrench' },
   { key: 'Alarm',       slug: 'alarm',       icon: 'fa-solid fa-triangle-exclamation' },
   { key: 'No Parts',    slug: 'no-parts',    icon: 'fa-solid fa-box-open' },
-  { key: 'Changeover',  slug: 'changeover',  icon: 'fa-solid fa-arrows-rotate' },
+  { key: 'Change Project',  slug: 'Change Project',  icon: 'fa-solid fa-arrows-rotate' },
 ];
 function reasonSlug(tag) {
   const found = REASON_TAGS.find(r => r.key === tag);
