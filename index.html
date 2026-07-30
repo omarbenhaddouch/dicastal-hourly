@@ -98,7 +98,195 @@
   100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 242, 254, 0); }
 }
 
-   
+/* ═══════════════════════════════════════════
+   DOWNTIME REASON TAGS
+   ═══════════════════════════════════════════ */
+
+/* In-cell tap target that replaces the free-text comment input */
+.reason-tag-btn {
+  width: 100%;
+  min-width: 108px;
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px dashed rgba(26, 58, 92, 0.35);
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: #8a97a5;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.reason-tag-btn:hover {
+  border-color: #00a8cc;
+  background: rgba(0, 168, 204, 0.08);
+  color: #1a3a5c;
+}
+.reason-tag-btn .rt-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #b9c2cc;
+}
+.reason-tag-btn .rt-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+.reason-tag-btn.has-tag {
+  border-style: solid;
+  border-color: rgba(26,58,92,0.35);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #1a3a5c;
+}
+/* Per-tag dot colors (dots now live directly on the tag, so multiple show at once) */
+.rt-dot.tag-tool-change { background: #1d6fd8; }
+.rt-dot.tag-alarm       { background: #c0392b; }
+.rt-dot.tag-no-parts    { background: #c47d00; }
+.rt-dot.tag-changeover  { background: #7e3ff2; }
+
+/* Popup overlay */
+.reason-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(6, 16, 28, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.reason-overlay.active { opacity: 1; pointer-events: auto; }
+
+.reason-popup {
+  width: 300px;
+  max-width: calc(100vw - 40px);
+  background: rgba(15, 39, 68, 0.97);
+  border: 1px solid rgba(0, 212, 255, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+  padding: 18px;
+  transform: translateY(8px) scale(0.98);
+  transition: transform 0.2s ease;
+}
+.reason-overlay.active .reason-popup { transform: translateY(0) scale(1); }
+
+.reason-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.reason-popup-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+.reason-popup-machine {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: #00d4ff;
+}
+.reason-popup-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: #6f8ba3;
+  margin-bottom: 14px;
+}
+
+.reason-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.reason-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+}
+.reason-option .ro-icon { font-size: 1rem; }
+.reason-option .ro-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #e8f0f7;
+  letter-spacing: 0.3px;
+}
+.reason-option .ro-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.8rem;
+  color: #00d4ff;
+}
+.reason-option { position: relative; }
+.reason-option:hover { transform: translateY(-2px); background: rgba(255,255,255,0.08); }
+.reason-option.tag-tool-change:hover, .reason-option.tag-tool-change.selected { border-color: #1d6fd8; box-shadow: 0 0 0 1px #1d6fd8 inset; }
+.reason-option.tag-alarm:hover, .reason-option.tag-alarm.selected { border-color: #ff5b4d; box-shadow: 0 0 0 1px #ff5b4d inset; }
+.reason-option.tag-no-parts:hover, .reason-option.tag-no-parts.selected { border-color: #ffb020; box-shadow: 0 0 0 1px #ffb020 inset; }
+.reason-option.tag-changeover:hover, .reason-option.tag-changeover.selected { border-color: #a855f7; box-shadow: 0 0 0 1px #a855f7 inset; }
+.reason-option.tag-tool-change .ro-icon { color: #4c9bff; }
+.reason-option.tag-alarm .ro-icon { color: #ff5b4d; }
+.reason-option.tag-no-parts .ro-icon { color: #ffb020; }
+.reason-option.tag-changeover .ro-icon { color: #a855f7; }
+
+.reason-popup-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 12px;
+}
+.reason-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: transparent;
+  color: #b9c8d6;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.reason-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.reason-btn-clear { color: #ff9d94; border-color: rgba(255,77,79,0.35); }
+.reason-btn-clear:hover { background: rgba(255,77,79,0.12); }
+.reason-btn-primary {
+  color: #06202e;
+  background: linear-gradient(135deg, #00d4ff 0%, #00f2fe 100%);
+  border-color: transparent;
+  font-weight: 800;
+}
+.reason-btn-primary:hover {
+  color: #06202e;
+  background: linear-gradient(135deg, #33ddff 0%, #5cf6ff 100%);
+}
 
   </style>
   
