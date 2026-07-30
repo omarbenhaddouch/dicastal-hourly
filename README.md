@@ -2,6 +2,7 @@
 **CITIC Dicastal — SW CNC Production Line**
 
 Live app: https://dicastal-hourly.netlify.app
+
 Manager Dashboard: https://dicastal-hourly.netlify.app/dashboard
 
 ---
