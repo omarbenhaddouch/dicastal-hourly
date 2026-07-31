@@ -6,8 +6,11 @@ Live app: https://dicastal-hourly.netlify.app
 <img width="2358" height="5112" alt="image" src="https://github.com/user-attachments/assets/803c5d32-28b2-4dca-9e5c-588227f058a6" />
 
 Manager Dashboard: https://dicastal-hourly.netlify.app/dashboard
+Phone:
+<img width="2358" height="5112" alt="image" src="https://github.com/user-attachments/assets/96b8f8d1-4834-476d-9033-c1bf55252dc6" />
+Laptop:
+<img width="7680" height="4320" alt="image" src="https://github.com/user-attachments/assets/31e60342-33b0-4ca6-93d9-38d4a33857e2" />
 
----
 
 ## 1. Purpose
 
