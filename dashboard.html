@@ -69,13 +69,12 @@
   <div class="mp-popup" onclick="event.stopPropagation()">
     <div class="mp-header">
       <div class="mp-header-left">
-        <span class="mp-status-dot" id="mp-status-dot"></span>
         <div>
           <div class="mp-title">MACHINE DETAIL <span class="mp-live-tag"><span class="mp-live-tag-dot"></span>LIVE</span></div>
           <div class="mp-id" id="mp-id">MSA01</div>
         </div>
       </div>
-      <button class="mp-close" onclick="closeMachinePopup()" aria-label="Close">&times;</button>
+      <button class="mp-close" onclick="closeMachinePopup()" aria-label="Close"><i class="fa-regular fa-circle-xmark"></i></button>
     </div>
     <div class="mp-grid">
       <div class="mp-field"><div class="mp-label">OPERATOR</div><div class="mp-val" id="mp-op">—</div></div>
@@ -94,6 +93,7 @@
   import { animate, stagger } from "https://cdn.jsdelivr.net/npm/motion@11/+esm";
   window.Motion = { animate, stagger };
 </script>
+<script src="https://kit.fontawesome.com/e114c7405d.js" crossorigin="anonymous"></script>
 <script type="module" src="firebase-readonly.js"></script>
 <script src="dashboard.js"></script>
 </body>

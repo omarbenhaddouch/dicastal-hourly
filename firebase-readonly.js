@@ -31,7 +31,7 @@ onValue(ref(db, 'shiftData'), (snapshot) => {
   machines = data.machines;
   numHours = data.numHours || 8;
   statusDot.className = 'online';
-  statusText.textContent = `Synced live · last saved by someone`;
+  statusText.textContent = `Synced live · last saved by "Baha"`;
   if (firstLoad) { renderDashboard(); firstLoad = false; }
   else refreshDashboardLive();
 });

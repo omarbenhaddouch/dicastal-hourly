@@ -386,7 +386,7 @@ function openMachinePopup(idx) {
     const { animate } = window.Motion;
     animate(overlay, { opacity: [0, 1] }, { duration: 0.25, easing: 'ease-out' });
     animate(popup, { opacity: [0, 1], transform: ['translateY(14px) scale(0.94)', 'translateY(0px) scale(1)'] },
-      { type: 'spring', stiffness: 320, damping: 24 });
+      { type: 'spring', stiffness: 520, damping: 24 });
   } else {
     overlay.style.opacity = 1; popup.style.opacity = 1; popup.style.transform = 'none';
   }

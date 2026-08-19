@@ -227,8 +227,8 @@ body::after {
 .mp-live-tag-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--db-green); box-shadow: var(--db-glow-green); animation: live-pulse 1.4s ease-in-out infinite; }
 .mp-id { font-family: var(--db-font-hud); font-size: 1.15rem; font-weight: 900; color: var(--db-cyan); text-shadow: var(--db-glow-cyan); letter-spacing: .03em; margin-top: 2px; }
 .mp-close {
-  background: none; border: 1px solid var(--db-border); color: var(--db-muted); width: 26px; height: 26px;
-  border-radius: 50%; font-size: 1rem; line-height: 1; cursor: pointer; transition: all .15s ease; flex-shrink: 0;
+  background: none; border: none; color: var(--db-text); width: 26px; height: 26px;
+  border-radius: 50%; font-size: 1.3rem; line-height: 1; cursor: pointer; transition: all .15s ease; flex-shrink: 0;
 }
 .mp-close:hover { color: var(--db-cyan); border-color: var(--db-border-hot); }
 .mp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -240,7 +240,7 @@ body::after {
 .mp-val.t-bad  { color: var(--db-red); }
 .mp-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; min-height: 26px; }
 .mp-tag {
-  font-family: var(--db-font-mono); font-size: .62rem; padding: 4px 9px; border-radius: 20px;
+  font-family: var(--db-font-mono); font-size: .62rem; padding: 4px 9px; border-radius: 6px;
   border: 1px solid rgba(255,255,255,0.15); color: #e8f0f7; background: rgba(255,255,255,0.06);
 }
 .mp-tag.tag-tool-change { border-color: #1d6fd8; color: #7fb8ff; background: rgba(29,111,216,0.14); }
