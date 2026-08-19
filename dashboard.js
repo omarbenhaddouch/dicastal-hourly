@@ -104,7 +104,14 @@ function buildKPICards(active, totalActual, totalPlan, eff, shortfall, onTarget)
       <div class="db-kpi-sub" id="kpi-sub-${i}">${c.sub}</div>
       <div class="db-kpi-bar-track"><div class="db-kpi-bar-fill" id="pb-${i}" style="background:${c.accent}"></div></div>
     </div>`).join('');
-  cards.forEach((_,i)=>setTimeout(()=>document.getElementById(`kpi-card-${i}`)?.classList.add('card-in'),i*80));
+  const cardEls = cards.map((_,i)=>document.getElementById(`kpi-card-${i}`)).filter(Boolean);
+  if (window.Motion) {
+    window.Motion.animate(cardEls,
+      { opacity: [0, 1], transform: ['translateY(20px) scale(0.97)', 'translateY(0px) scale(1)'] },
+      { delay: window.Motion.stagger(0.08), duration: 0.5, easing: [0.22, 1, 0.36, 1] });
+  } else {
+    cardEls.forEach((el,i)=>setTimeout(()=>el.classList.add('card-in'),i*80));
+  }
   setTimeout(()=>cards.forEach((_,i)=>{ const el=document.getElementById(`pb-${i}`); if(el) el.style.width=cards[i].pct+'%'; }),300);
   setTimeout(()=>{
     countUp('stat-actual', totalActual, 900);
@@ -133,14 +140,20 @@ function buildMachineGrid(all) {
     let cls='mc-idle';
     if(m.target>0) cls=eff>=100?'mc-green':eff>=85?'mc-amber':'mc-red';
     const pct=plan>0?Math.min(actual/plan*100,100):0;
-    return `<div class="db-machine-cell ${cls}" id="mc-cell-${idx}" style="animation-delay:${idx*28}ms"
-      title="${m.part||'—'} | ${actual}/${plan} (${eff}%)">
+    return `<div class="db-machine-cell ${cls}" id="mc-cell-${idx}"
+      title="${m.part||'—'} | ${actual}/${plan} (${eff}%)" onclick="openMachinePopup(${idx})">
       <div class="mc-id">${m.id}</div>
       <div class="mc-actual" id="mc-actual-${idx}">${m.target>0?actual:'—'}</div>
       <div class="mc-eff" id="mc-eff-${idx}">${m.target>0?eff+'%':'SUSPENDED'}</div>
       <div class="mc-bar-track"><div class="mc-bar-fill" id="mc-bar-${idx}" style="width:${pct}%"></div></div>
     </div>`;
   }).join('');
+  const cells = document.querySelectorAll('#db-machine-grid .db-machine-cell');
+  if (window.Motion) {
+    window.Motion.animate(cells,
+      { opacity: [0, 1], transform: ['scale(0.6)', 'scale(1)'] },
+      { delay: window.Motion.stagger(0.02), duration: 0.35, easing: [0.22, 1, 0.36, 1] });
+  }
 }
 function updateMachineGrid(all) {
   const numHours = getNumHours();
@@ -339,4 +352,95 @@ function refreshDashboardLive() {
   updateMachineGrid(machines);
   animateRing(eff, totalActual, totalPlan, false);
   updateCharts(active);
+  if (openMachineIdx !== null) renderMachinePopup();
 }
+
+// ── Machine Detail Popup ──
+const MP_REASON_TAGS = [
+  { key: 'Tool Change',    slug: 'tool-change' },
+  { key: 'Alarm',          slug: 'alarm' },
+  { key: 'No Parts',       slug: 'no-parts' },
+  { key: 'Change Project', slug: 'changeover' },
+];
+function mpReasonSlug(tag) {
+  const found = MP_REASON_TAGS.find(r => r.key === tag);
+  return found ? found.slug : '';
+}
+// Same normalization as the entry table: comment can be an array, a legacy string, or empty.
+function mpGetTags(m) {
+  if (Array.isArray(m.comment)) return m.comment.filter(Boolean);
+  if (typeof m.comment === 'string' && m.comment) return [m.comment];
+  return [];
+}
+
+let openMachineIdx = null;
+let machinePopupTimer = null;
+
+function openMachinePopup(idx) {
+  openMachineIdx = idx;
+  renderMachinePopup();
+  const overlay = document.getElementById('machineOverlay');
+  const popup = overlay.querySelector('.mp-popup');
+  overlay.classList.add('active');
+  if (window.Motion) {
+    const { animate } = window.Motion;
+    animate(overlay, { opacity: [0, 1] }, { duration: 0.25, easing: 'ease-out' });
+    animate(popup, { opacity: [0, 1], transform: ['translateY(14px) scale(0.94)', 'translateY(0px) scale(1)'] },
+      { type: 'spring', stiffness: 320, damping: 24 });
+  } else {
+    overlay.style.opacity = 1; popup.style.opacity = 1; popup.style.transform = 'none';
+  }
+  if (machinePopupTimer) clearInterval(machinePopupTimer);
+  machinePopupTimer = setInterval(renderMachinePopup, 1000); // real-time refresh every second
+}
+function closeMachinePopup() {
+  const overlay = document.getElementById('machineOverlay');
+  const popup = overlay?.querySelector('.mp-popup');
+  const finish = () => overlay?.classList.remove('active');
+  if (overlay) {
+    if (window.Motion && popup) {
+      const { animate } = window.Motion;
+      animate(popup, { opacity: [1, 0], transform: ['translateY(0px) scale(1)', 'translateY(10px) scale(0.95)'] },
+        { duration: 0.18, easing: 'ease-in' });
+      const overlayAnim = animate(overlay, { opacity: [1, 0] }, { duration: 0.2, easing: 'ease-in' });
+      Promise.resolve(overlayAnim.finished).then(finish).catch(finish);
+    } else {
+      finish();
+    }
+  }
+  openMachineIdx = null;
+  if (machinePopupTimer) { clearInterval(machinePopupTimer); machinePopupTimer = null; }
+}
+function renderMachinePopup() {
+  if (openMachineIdx === null) return;
+  const machines = getMachines();
+  const m = machines[openMachineIdx];
+  if (!m) { closeMachinePopup(); return; }
+
+  const numHours = getNumHours();
+  const actual = m.hours.reduce((a, b) => a + (Number(b) || 0), 0);
+  const plan = m.target * numHours;
+  const eff = plan > 0 ? Math.round(actual / plan * 100) : 0;
+  const tags = mpGetTags(m);
+  const statusCls = m.target <= 0 ? 'idle' : (eff >= 100 ? 'ok' : eff >= 85 ? 'warn' : 'bad');
+  const effCls = eff >= 100 ? 't-ok' : eff >= 85 ? 't-warn' : 't-bad';
+
+  const setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+
+  setText('mp-id', m.id);
+  const dot = document.getElementById('mp-status-dot'); if (dot) dot.className = `mp-status-dot ${statusCls}`;
+  setText('mp-op', m.op || '—');
+  setText('mp-part', m.part || '—');
+  setText('mp-actual', m.target > 0 ? `${actual} / ${plan}` : '—');
+  const effEl = document.getElementById('mp-eff');
+  if (effEl) { effEl.textContent = m.target > 0 ? eff + '%' : '—'; effEl.className = `mp-val ${effCls}`; }
+
+  const tagsEl = document.getElementById('mp-tags');
+  if (tagsEl) {
+    tagsEl.innerHTML = tags.length
+      ? tags.map(t => `<span class="mp-tag tag-${mpReasonSlug(t)}">${t}</span>`).join('')
+      : `<span class="mp-tag-empty">No issues logged</span>`;
+  }
+  setText('mp-updated', 'Updated ' + new Date().toLocaleTimeString('en-GB'));
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMachinePopup(); });
